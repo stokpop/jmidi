@@ -7,23 +7,38 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
-import java.io.File;
 
 public class DumpMidiFile {
-    public static final int NOTE_ON = 0x90;
-    public static final int NOTE_OFF = 0x80;
-    public static final String[] NOTE_NAMES = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 1) {
-            System.err.println("Please add midi file as parameter");
+        if (args.length < 1) {
+            System.err.println("Please add midi file as parameter, and optional track number to play that track.");
             System.exit(2);
         }
+
         String midiFile = args[0];
 
-        Sequence sequence = MidiSystem.getSequence(new File(midiFile));
+        String midiFileAbsPath = midiFile.startsWith("/") ? midiFile : "/" + midiFile;
+        Sequence sequence = MidiSystem.getSequence(DumpMidiFile.class.getResourceAsStream(midiFileAbsPath));
 
+        if (args.length == 2) {
+            int trackNumber = Integer.parseInt(args[1]);
+            playTrack(sequence, trackNumber);
+        }
+        else {
+            printMidiInfo(sequence);
+        }
+
+    }
+
+    private static void playTrack(Sequence sequence, int trackNumber) {
+
+
+
+    }
+
+    private static void printMidiInfo(Sequence sequence) {
         int trackNumber = 0;
         for (Track track :  sequence.getTracks()) {
             trackNumber++;
@@ -38,7 +53,6 @@ public class DumpMidiFile {
             }
             sayLn();
         }
-
     }
 
     private static void printMessageInfo(final MidiMessage message) {
@@ -46,13 +60,13 @@ public class DumpMidiFile {
             ShortMessage sm = (ShortMessage) message;
             say(String.format("Channel=%-2d ", sm.getChannel()));
             int command = sm.getCommand();
-            if (command == NOTE_ON || command == NOTE_OFF) {
+            if (command == MidiUtil.NOTE_ON || command == MidiUtil.NOTE_OFF) {
                 int key = sm.getData1();
                 int octave = (key / 12) - 1;
                 int note = key % 12;
-                String noteName = NOTE_NAMES[note];
+                String noteName = MidiUtil.NOTE_NAMES[note];
                 int velocity = sm.getData2();
-                sayLn(String.format("Note %-3s %s%d key=%-3d velocity=%-3d", command == NOTE_ON ? "on" : "off", noteName, octave, key, velocity));
+                sayLn(String.format("Note %-3s %s%d key=%-3d velocity=%-3d", command == MidiUtil.NOTE_ON ? "on" : "off", noteName, octave, key, velocity));
             }
             else if (command == 0xB0) {
                 sayLn(String.format("Command: Control Change (CC) data1=%d data2=%d", sm.getData1(), sm.getData2()));
