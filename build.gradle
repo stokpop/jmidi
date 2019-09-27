@@ -8,3 +8,6 @@ dependencies {
     compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.12.RELEASE'
 }
 
+apply plugin: 'java'
+sourceCompatibility = 1.12
+targetCompatibility = 1.12

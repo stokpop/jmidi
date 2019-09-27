@@ -7,25 +7,30 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-public class StokpopMidiFlux {
+public class MidiFlux {
 
-    public StokpopMidiFlux() {
+    public MidiFlux() {
 
     }
 
     public static void main(String[] args) throws MidiUnavailableException {
 
-        //StokpopMidiFlux.printDevices();
+        MidiFlux.printDevices();
 
-        StokpopMidiFlux stokpopMidiFlux = new StokpopMidiFlux();
+        MidiFlux.printInstruments();
+
+        MidiFlux stokpopMidiFlux = new MidiFlux();
 
         try {
 
-            InputStream music = StokpopMidiFlux.class.getClassLoader().getResourceAsStream("base-line-1.mid");
-
+            String midiFile = "disco.mid";
+            InputStream music = MidiFlux.class.getClassLoader().getResourceAsStream(midiFile);
+            if (music == null) {
+                throw new RuntimeException("File not found: " + midiFile);
+            }
             Sequence sequence = MidiSystem.getSequence(music);
-            MidiDevice midiOutDevice = openMidiDevice(5);
-            //stokpopMidiFlux.startExternal(midiOutDevice, sequence);
+            MidiDevice midiOutDevice = openMidiDevice(0);
+            stokpopMidiFlux.startExternal(midiOutDevice, sequence);
             //stokpopMidiFlux.startSimple(sequence);
             stokpopMidiFlux.startFlux(midiOutDevice);
 
@@ -35,6 +40,16 @@ public class StokpopMidiFlux {
         } catch (MidiUnavailableException | IOException | InvalidMidiDataException e) {
             System.err.printf("Error: %s%n", e);
         }
+
+    }
+
+    private static void printInstruments() throws MidiUnavailableException {
+        System.out.println("Print devices");
+        Synthesizer synthesizer = MidiSystem.getSynthesizer();
+        Instrument[] availableInstruments = synthesizer.getAvailableInstruments();
+
+        Flux.fromArray(availableInstruments)
+                .doOnNext(i -> System.out.println(i.getName())).blockLast();
 
     }
 
@@ -98,7 +113,7 @@ public class StokpopMidiFlux {
         return midiOutDevice;
     }
 
-    public void startFlux(MidiDevice midiOutDevice) throws MidiUnavailableException, InvalidMidiDataException {
+    public void startFlux(MidiDevice midiOutDevice) throws MidiUnavailableException {
         System.out.println("Start flux.");
 
         Receiver midiOutReceiver = midiOutDevice.getReceiver();
