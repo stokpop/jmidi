@@ -1,13 +1,20 @@
 package nl.stokpop.midiflux;
 
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import javax.sound.midi.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MidiFlux {
+
+    public static final int BASE_DRUM = 36;
+    public static final int SNARE_DRUM = 38;
 
     public MidiFlux() {
 
@@ -15,103 +22,31 @@ public class MidiFlux {
 
     public static void main(String[] args) throws MidiUnavailableException {
 
-        MidiFlux.printDevices();
-
-        MidiFlux.printInstruments();
+        MidiController.printDevices();
 
         MidiFlux stokpopMidiFlux = new MidiFlux();
 
         try {
 
-            String midiFile = "disco.mid";
-            InputStream music = MidiFlux.class.getClassLoader().getResourceAsStream(midiFile);
-            if (music == null) {
-                throw new RuntimeException("File not found: " + midiFile);
+            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDevice("IAC Bus 1");
+            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDevice("Gervill");
+
+            if (midiOutDevice.isPresent()) {
+                stokpopMidiFlux.startFlux(midiOutDevice.get());
             }
-            Sequence sequence = MidiSystem.getSequence(music);
-            MidiDevice midiOutDevice = openMidiDevice(0);
-            stokpopMidiFlux.startExternal(midiOutDevice, sequence);
-            //stokpopMidiFlux.startSimple(sequence);
-            stokpopMidiFlux.startFlux(midiOutDevice);
+            else {
+                System.out.println("Midi device not available.");
+            }
 
-            midiOutDevice.close();
+            //midiOutDevice.close();
 
 
-        } catch (MidiUnavailableException | IOException | InvalidMidiDataException e) {
+        } catch (MidiUnavailableException e) {
             System.err.printf("Error: %s%n", e);
         }
 
     }
 
-    private static void printInstruments() throws MidiUnavailableException {
-        System.out.println("Print devices");
-        Synthesizer synthesizer = MidiSystem.getSynthesizer();
-        Instrument[] availableInstruments = synthesizer.getAvailableInstruments();
-
-        Flux.fromArray(availableInstruments)
-                .doOnNext(i -> System.out.println(i.getName())).blockLast();
-
-    }
-
-    private void startSimple(Sequence sequence) throws InvalidMidiDataException, MidiUnavailableException {
-        System.out.println("Start simple play.");
-        Sequencer sequencer;
-        sequencer = MidiSystem.getSequencer();
-        sequencer.open();
-
-//            for (Track track : sequence.getTracks())
-//            {
-//                for (int c = 0; c < 16; c++)
-//                    track.add(new MidiEvent(
-//                            new ShortMessage(ShortMessage.CONTROL_CHANGE, c, 7, 0),
-//                            track.ticks()));
-//            }
-
-        sequencer.setSequence(sequence);
-        sequencer.start();
-
-    }
-
-    public void startExternal(MidiDevice midiOutDevice, Sequence sequence) throws MidiUnavailableException, InvalidMidiDataException {
-        System.out.println("Start external play.");
-
-        Receiver midiOutReceiver = midiOutDevice.getReceiver();
-
-        Sequencer midiOutSequencer = MidiSystem.getSequencer(false);
-
-
-        //Add the new MIDI out device here.
-        midiOutSequencer.getTransmitter().setReceiver(midiOutReceiver);
-        midiOutSequencer.open();
-
-        midiOutSequencer.setSequence(sequence);
-
-        midiOutSequencer.start();
-
-    }
-
-    private static void printDevices() throws MidiUnavailableException {
-        System.out.println("Print devices");
-        MidiDevice.Info[] midiDeviceInfos = MidiSystem.getMidiDeviceInfo();
-
-        for (int i = 0, midiDeviceInfosLength = midiDeviceInfos.length; i < midiDeviceInfosLength; i++) {
-            MidiDevice.Info info = midiDeviceInfos[i];
-            MidiDevice midiOutDevice = MidiSystem.getMidiDevice(info);
-            int maxReceivers = midiOutDevice.getMaxReceivers();
-            int maxTransmitters = midiOutDevice.getMaxTransmitters();
-            System.out.printf("[%3d] %30s, %34s, %24s, mt: %2d, mr: %2d%n", i, info.getDescription(), info.getName(), info.getVendor(), maxTransmitters, maxReceivers);
-        }
-    }
-
-    private static MidiDevice openMidiDevice(int index) throws MidiUnavailableException {
-        System.out.printf("List and open midiflux device: %d%n", index);
-        MidiDevice.Info[] midiDeviceInfos = MidiSystem.getMidiDeviceInfo();
-
-        MidiDevice midiOutDevice = MidiSystem.getMidiDevice(midiDeviceInfos[index]);
-        midiOutDevice.open();
-
-        return midiOutDevice;
-    }
 
     public void startFlux(MidiDevice midiOutDevice) throws MidiUnavailableException {
         System.out.println("Start flux.");
@@ -119,17 +54,25 @@ public class MidiFlux {
         Receiver midiOutReceiver = midiOutDevice.getReceiver();
 
         List<Note> notes = List.of(
-                new Note(50, 400),
-                new Note(33, 200),
-                new Note(45, 500),
-                new Note(50, 400),
-                new Note(33, 200),
-                new Note(45, 500),
-                new Note(60, 400),
-                new Note(33, 200),
-                new Note(40, 500)
+                new Note(50, 400, 70),
+                new Note(33, 200, 70),
+                new Note(45, 500, 70),
+                new Note(50, 400, 77),
+                new Note(33, 200, 70),
+                new Note(45, 500, 70),
+                new Note(60, 400, 45),
+                new Note(40, 200, 70),
+                new Note(42, 400, 100),
+                new Note(40, 500, 70)
                 );
 
+        List<Note> drums = List.of(
+                new Note(BASE_DRUM, 500, 90),
+                new Note(SNARE_DRUM, 500, 90),
+                new Note(BASE_DRUM, 250, 90),
+                new Note(BASE_DRUM, 250, 90),
+                new Note(SNARE_DRUM, 500, 90)
+        );
 
         Flux<Note> noteGenerator = Flux.generate(
                 () -> 0,
@@ -139,32 +82,37 @@ public class MidiFlux {
                 });
 
         noteGenerator
-                .doOnNext(note -> playNote(midiOutReceiver, note))
-                .blockLast();
+                .log()
+                .doOnNext(note -> MidiController.playNote(midiOutReceiver, note, Channel.c1))
+                .subscribeOn(Schedulers.newSingle("tones"))
+                .subscribe();
 
-        midiOutReceiver.close();
+        Flux<Note> drumGenerator = Flux.generate(
+                () -> 0,
+                (state, sink) -> {
+                    sink.next(drums.get(state % drums.size()));
+                    return state + 1;
+                });
+
+        drumGenerator
+                .log()
+                .doOnNext(note -> MidiController.playNote(midiOutReceiver, note, Channel.c2))
+                .subscribeOn(Schedulers.newSingle("drums"))
+                .subscribe();
+
+//        try {s
+//            Thread.sleep(10000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
 
     }
 
-    private static void playNote(Receiver midiOutReceiver, Note note) {
+    private List<Note> generateNotes() {
 
-        try {
-            ShortMessage msg1 = new ShortMessage();
-            msg1.setMessage(ShortMessage.NOTE_ON, 0, note.getNote(), 70);
-            midiOutReceiver.send(msg1, 0);
+        return IntStream.range(1,100).mapToObj(i -> new Note(i, 100)).collect(Collectors.toList());
 
-            try {
-                Thread.sleep(note.getDuration());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            ShortMessage msg2 = new ShortMessage();
-            msg2.setMessage(ShortMessage.NOTE_ON, 0, note.getNote(), 0);
-            midiOutReceiver.send(msg2, 0);
-        } catch (InvalidMidiDataException e) {
-            e.printStackTrace();
-        }
     }
 
 }
