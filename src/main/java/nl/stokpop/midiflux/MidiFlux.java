@@ -1,11 +1,10 @@
 package nl.stokpop.midiflux;
 
+import nl.stokpop.jmidi.MidiController;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 import javax.sound.midi.*;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,8 +27,9 @@ public class MidiFlux {
 
         try {
 
-            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDevice("IAC Bus 1");
-            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDevice("Gervill");
+            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("IAC Bus 1");
+            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("Gervill");
+            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("Bass Station");
 
             if (midiOutDevice.isPresent()) {
                 stokpopMidiFlux.startFlux(midiOutDevice.get());
@@ -53,18 +53,25 @@ public class MidiFlux {
 
         Receiver midiOutReceiver = midiOutDevice.getReceiver();
 
+//        List<Note> notes = List.of(
+//                new Note(50, 400, 70),
+//                new Note(33, 200, 70),
+//                new Note(45, 500, 70),
+//                new Note(50, 400, 77),
+//                new Note(33, 200, 70),
+//                new Note(45, 500, 70),
+//                new Note(60, 400, 45),
+//                new Note(40, 200, 70),
+//                new Note(42, 400, 100),
+//                new Note(40, 500, 70)
+//                );
+
         List<Note> notes = List.of(
-                new Note(50, 400, 70),
-                new Note(33, 200, 70),
-                new Note(45, 500, 70),
-                new Note(50, 400, 77),
-                new Note(33, 200, 70),
-                new Note(45, 500, 70),
-                new Note(60, 400, 45),
-                new Note(40, 200, 70),
-                new Note(42, 400, 100),
-                new Note(40, 500, 70)
-                );
+                new Note(55, 500, 61),
+                new Note(59, 500, 65),
+                new Note(53, 500, 63),
+                new Note(52, 500, 84)
+        );
 
         List<Note> drums = List.of(
                 new Note(BASE_DRUM, 500, 90),

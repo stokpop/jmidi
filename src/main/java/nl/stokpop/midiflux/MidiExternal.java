@@ -1,5 +1,7 @@
 package nl.stokpop.midiflux;
 
+import nl.stokpop.jmidi.MidiController;
+
 import javax.sound.midi.*;
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,4 +1,4 @@
-package nl.stokpop.jmidi;
+package nl.stokpop.jmidi.util;
 
 public class MidiBytesToTempo implements MidiBytesConverter {
 

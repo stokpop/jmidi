@@ -1,5 +1,7 @@
 package nl.stokpop.jmidi;
 
+import nl.stokpop.jmidi.util.MidiUtil;
+
 import javax.sound.midi.*;
 import java.io.IOException;
 import java.io.InputStream;

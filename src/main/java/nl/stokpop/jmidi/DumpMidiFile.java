@@ -1,11 +1,11 @@
 package nl.stokpop.jmidi;
 
-import javax.sound.midi.MetaMessage;
+import nl.stokpop.jmidi.util.MidiUtil;
+
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
 
 public class DumpMidiFile {
@@ -14,7 +14,7 @@ public class DumpMidiFile {
 
         if (args.length < 1) {
             System.err.println("Please add midi file as parameter, and optional track number to play that track.");
-            System.exit(2);
+            System.exit(1);
         }
 
         String midiFile = args[0];
@@ -49,46 +49,9 @@ public class DumpMidiFile {
                 MidiEvent event = track.get(i);
                 say(String.format("@%1$-9d ", event.getTick()));
                 MidiMessage message = event.getMessage();
-                printMessageInfo(message);
+                MidiUtil.printMessageInfo(message);
             }
             sayLn();
-        }
-    }
-
-    private static void printMessageInfo(final MidiMessage message) {
-        if (message instanceof ShortMessage) {
-            ShortMessage sm = (ShortMessage) message;
-            say(String.format("Channel=%-2d ", sm.getChannel()));
-            int command = sm.getCommand();
-            if (command == MidiUtil.NOTE_ON || command == MidiUtil.NOTE_OFF) {
-                int key = sm.getData1();
-                int octave = (key / 12) - 1;
-                int note = key % 12;
-                String noteName = MidiUtil.NOTE_NAMES[note];
-                int velocity = sm.getData2();
-                sayLn(String.format("Note %-3s %s%d key=%-3d velocity=%-3d", command == MidiUtil.NOTE_ON ? "on" : "off", noteName, octave, key, velocity));
-            }
-            else if (command == 0xB0) {
-                sayLn(String.format("Command: Control Change (CC) data1=%d data2=%d", sm.getData1(), sm.getData2()));
-            }
-            else if (command == 0xC0) {
-                sayLn("Command: Program Change data1 (program):" + sm.getData1());
-            }
-            else if (command == 0xD0) {
-                sayLn("Command: Aftertouch data1 (pressure):" + sm.getData1());
-            } else {
-                sayLn("Command:" + command);
-            }
-        } else {
-            if (message instanceof MetaMessage) {
-                MetaMessage metaMessage = (MetaMessage) message;
-                int type = metaMessage.getType();
-                MetaMessageType messageType = MetaMessageType.codeToType(type);
-                sayLn(String.format("MetaMessage (%1$-14s): %2$s", messageType.getName(), messageType.convertBytes(((MetaMessage) message).getData())));
-            }
-            else {
-                sayLn("Other message: " + message.getClass());
-            }
         }
     }
 

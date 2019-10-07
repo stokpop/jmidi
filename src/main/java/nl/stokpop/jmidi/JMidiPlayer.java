@@ -1,6 +1,7 @@
 package nl.stokpop.jmidi;
 
-// Java program showing how to change the instrument type
+import nl.stokpop.jmidi.util.MidiUtil;
+
 import javax.sound.midi.*;
 import java.util.*;
 
@@ -11,10 +12,7 @@ public class JMidiPlayer {
 
         JMidiPlayer player = new JMidiPlayer();
 
-        Scanner in = new Scanner(System.in);
-        System.out.println("Enter the instrument to be played");
         int instrument = 88;
-        System.out.println("Enter the note to be played");
         int note = 40;
 
         Soundbank defaultSoundbank = MidiSystem.getSynthesizer().getDefaultSoundbank();

@@ -1,8 +1,8 @@
-package nl.stokpop.jmidi;
+package nl.stokpop.jmidi.util;
 
 public class MidiBytesToIntList implements MidiBytesConverter {
 
-    public static final MidiBytesToIntList singleton = new MidiBytesToIntList();
+    static final MidiBytesToIntList singleton = new MidiBytesToIntList();
 
     @Override
     public String convertBytes(final byte[] midiData) {

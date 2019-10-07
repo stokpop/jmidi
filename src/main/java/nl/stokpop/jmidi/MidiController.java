@@ -1,13 +1,19 @@
-package nl.stokpop.midiflux;
+package nl.stokpop.jmidi;
 
+import nl.stokpop.midiflux.Channel;
+import nl.stokpop.midiflux.Note;
 import reactor.core.publisher.Flux;
 
 import javax.sound.midi.*;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class MidiController {
+
+    private final static char CHAR_INFINITY = '\u221E';
+
     public static void printInstruments() throws MidiUnavailableException {
         System.out.println("Print devices");
         Synthesizer synthesizer = MidiSystem.getSynthesizer();
@@ -25,14 +31,18 @@ public class MidiController {
         for (int i = 0, midiDeviceInfosLength = midiDeviceInfos.length; i < midiDeviceInfosLength; i++) {
             MidiDevice.Info info = midiDeviceInfos[i];
             MidiDevice midiOutDevice = MidiSystem.getMidiDevice(info);
-            int maxReceivers = midiOutDevice.getMaxReceivers();
-            int maxTransmitters = midiOutDevice.getMaxTransmitters();
-            System.out.printf("[%3d] %30s, %34s, %24s, mt: %2d, mr: %2d%n", i, info.getDescription(), info.getName(), info.getVendor(), maxTransmitters, maxReceivers);
+            String maxReceivers = toInfinityAndBeyond(midiOutDevice.getMaxReceivers());
+            String maxTransmitters = toInfinityAndBeyond(midiOutDevice.getMaxTransmitters());
+            System.out.printf("[%3d] %30s, %34s, %24s, trs: %2s, rcs: %2s%n", i, info.getDescription(), info.getName(), info.getVendor(), maxTransmitters, maxReceivers);
         }
     }
 
+    private static String toInfinityAndBeyond(int number) {
+        return number == -1 ? String.valueOf(CHAR_INFINITY) : String.valueOf(number);
+    }
+
     public static Optional<MidiDevice> openMidiDevice(int index) {
-        System.out.printf("List and open midiflux device: %d%n", index);
+        System.out.printf("List and open midi device: %d%n", index);
         MidiDevice.Info[] midiDeviceInfos = MidiSystem.getMidiDeviceInfo();
 
         try {
@@ -46,14 +56,24 @@ public class MidiController {
 
     }
 
-    public static Optional<MidiDevice> openMidiDevice(String name) throws MidiUnavailableException {
-        System.out.printf("List and open midiflux device: %s%n", name);
+
+    public static Optional<MidiDevice> openMidiDeviceReciever(String name) throws MidiUnavailableException {
+        System.out.printf("List and open receiver midi device: %s%n", name);
+        return openMidiDevice(name, d -> d.getMaxReceivers() != 0);
+    }
+
+    public static Optional<MidiDevice> openMidiDeviceTransmitter(String name) throws MidiUnavailableException {
+        System.out.printf("List and open transmitter midi device: %s%n", name);
+        return openMidiDevice(name, d -> d.getMaxTransmitters() != 0);
+    }
+
+    private static Optional<MidiDevice> openMidiDevice(String name, Predicate<MidiDevice> midiDevicePredicate) throws MidiUnavailableException {
         MidiDevice.Info[] midiDeviceInfos = MidiSystem.getMidiDeviceInfo();
 
         Optional<MidiDevice> midiDevice = Stream.of(midiDeviceInfos)
                 .filter(m -> m.getName().contains(name))
                 .map(wrapInRuntimeException(MidiSystem::getMidiDevice))
-                .filter(d -> d.getMaxReceivers() != 0)
+                .filter(midiDevicePredicate)
                 .findFirst();
 
         if (midiDevice.isPresent()) {

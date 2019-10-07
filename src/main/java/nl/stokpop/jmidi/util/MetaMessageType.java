@@ -1,4 +1,4 @@
-package nl.stokpop.jmidi;
+package nl.stokpop.jmidi.util;
 
 import java.util.Arrays;
 import java.util.Map;

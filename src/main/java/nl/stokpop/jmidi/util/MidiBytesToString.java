@@ -1,10 +1,8 @@
-package nl.stokpop.jmidi;
-
-import java.util.Arrays;
+package nl.stokpop.jmidi.util;
 
 public class MidiBytesToString implements MidiBytesConverter {
 
-    public static final MidiBytesToString singleton = new MidiBytesToString();
+    static final MidiBytesToString singleton = new MidiBytesToString();
     
     @Override
     public String convertBytes(final byte[] midiBytes) {
