@@ -1,8 +1,12 @@
-package nl.stokpop.midiflux;
+package nl.stokpop.jmidi;
 
-import nl.stokpop.jmidi.MidiController;
-
-import javax.sound.midi.*;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Sequencer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;

@@ -4,7 +4,9 @@ import nl.stokpop.jmidi.MidiController;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-import javax.sound.midi.*;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,13 +25,17 @@ public class MidiFlux {
 
         MidiController.printDevices();
 
+        if (args.length != 1) {
+            System.err.println("Please provide part of midi device name as argument.");
+            System.exit(1);
+        }
+        String name = args[0];
+
         MidiFlux stokpopMidiFlux = new MidiFlux();
 
         try {
 
-            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("IAC Bus 1");
-            //Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("Gervill");
-            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever("Bass Station");
+            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever(name);
 
             if (midiOutDevice.isPresent()) {
                 stokpopMidiFlux.startFlux(midiOutDevice.get());
