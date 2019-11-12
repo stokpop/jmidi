@@ -8,16 +8,19 @@ public class HexToBits {
 
     public static void main(String[] args) {
         char c = 'T';
-        BitSet bitSet = convertTo6x8charIn8x8Raster(c);
+
+        byte[] bytes = convertTo6x8charIn8x8Raster(c);
+
+        BitSet bitSet = BitSet.valueOf(bytes);
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                System.out.print(bitSet.get(i * 8 + (8 - j)) ? "X" : ".");
+                System.out.print(bitSet.get(i * 8 + (8 - j - 1)) ? "X" : ".");
             }
-            System.out.println("");
+            System.out.println();
         }
     }
 
-    public static BitSet convertTo6x8charIn8x8Raster(char c) {
+    static byte[] convertTo6x8charIn8x8Raster(char c) {
 
         byte[] bytes = new byte[8];
 
@@ -25,7 +28,7 @@ public class HexToBits {
             bytes[i] = (byte) MiniFont.console_font_6x8[c * 8 + i];
         }
 
-        return BitSet.valueOf(bytes);
+        return bytes;
     }
 
 
@@ -37,7 +40,7 @@ public class HexToBits {
         }
 
         for (String s : twoChars) {
-            Byte hexToByte = hexToByte(s);
+            byte hexToByte = hexToByte(s);
             String toBinaryString = Integer.toBinaryString(hexToByte);
             String replace = String.format("%8s", toBinaryString).replace(' ', '0');
             System.out.println(replace);

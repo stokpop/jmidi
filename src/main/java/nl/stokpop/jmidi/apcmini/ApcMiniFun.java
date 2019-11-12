@@ -6,8 +6,6 @@ import reactor.core.publisher.Flux;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
-import java.awt.*;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -22,17 +20,22 @@ import static nl.stokpop.jmidi.apcmini.LedColor.yellow_blink;
 
 /**
  * Check specs here: https://getsatisfaction.com/akai_professional/topics/midi-information-for-apc-mini
+ *
+ * Be sure to connect an apc-mini with usb.
  */
 public class ApcMiniFun {
     
-    protected static final int LED_DELAY = 20;
-    protected static final int LETTER_DELAY = 500;
+    private static final int LED_DELAY = 20;
+    private static final int LETTER_DELAY = 80;
+    private static final int SIZE_X = 8;
+    private static final int SIZE_Y = 8;
 
-    public ApcMiniFun() {
+
+    private ApcMiniFun() {
 
     }
 
-    public static void main(String[] args) throws MidiUnavailableException, IOException, FontFormatException {
+    public static void main(String[] args) throws MidiUnavailableException {
 
         MidiController.printDevices();
 
@@ -99,53 +102,113 @@ public class ApcMiniFun {
                 .doOnNext(m -> receiver.send(m, 0L))
                 .blockLast();
 
-        Flux.fromArray("HELLO WORLD 1234567890".split(""))
-                .log()
-                .delayElements(Duration.ofMillis(LETTER_DELAY))
-                .map(s -> s.charAt(0))
-                .doOnNext(c -> createLetter(receiver, c))
+        int count = 0;
+
+        String message = "  HELLO WORLD! WHAT A COOL WAY TO SHOW SOME LETTERS! Signed by Peter Paul !@&#^*$^(<.>,;' ";
+
+        BitSet c1 = BitSet.valueOf(HexToBits.convertTo6x8charIn8x8Raster(message.charAt(0)));
+        BitSet c2 = BitSet.valueOf(HexToBits.convertTo6x8charIn8x8Raster(message.charAt(1)));
+
+        while (count++ < 1_000_000) {
+
+            if (count % 8 == 0) {
+                // next letter
+                c1 = c2;
+                int index = ((count / 8) + 1) % message.length();
+                c2 = BitSet.valueOf(HexToBits.convertTo6x8charIn8x8Raster(message.charAt(index)));
+            }
+
+            LedColor[][] charLeds = createCharLeds(c1, c2, count % 8);
+
+            createLayout(charLeds)
+                .map(Button::midiMessage)
+                .doOnNext(m -> receiver.send(m, 0L))
                 .blockLast();
-        
+                try {
+                    Thread.sleep(LETTER_DELAY);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
     }
 
-    private void createLetter(Receiver receiver, char a) {
-        createLayout(createCharLeds(a))
-                .log()
+    private int[] createBuffer(char c1, char c2) {
+        byte[] bytes1 = HexToBits.convertTo6x8charIn8x8Raster(c1);
+        byte[] bytes2 = HexToBits.convertTo6x8charIn8x8Raster(c2);
+        int[] buffer = new int[SIZE_Y];
+        for (int i = 0; i < SIZE_Y; i++) {
+            int shifted = bytes2[i] << 8;
+            buffer[i] = shifted | bytes1[i];
+        }
+        return buffer;
+    }
+
+    private byte[] fromBuffer(int[] buffer) {
+        byte[] bytes = new byte[SIZE_Y];
+        for (int i = 0; i < SIZE_Y; i++) {
+            bytes[i] = (byte) (buffer[i]) ;
+        }
+        return bytes;
+    }
+
+    private void createLetter(Receiver receiver, BitSet bitSet8x8) {
+        createLayout(createCharLeds(bitSet8x8))
+                //.log()
                 .map(Button::midiMessage)
                 .doOnNext(m -> receiver.send(m, 0L))
                 .subscribe();
     }
 
-    LedColor[][] createCharLeds(char c) {
+    private int[] shiftLeft(int[] buffer) {
+        int[] shifted = new int[buffer.length];
 
-        BitSet bits = HexToBits.convertTo6x8charIn8x8Raster(c);
+        for (int i = 0; i < buffer.length; i++) {
+            shifted[i] = buffer[i] << 1;
+        }
 
-        LedColor[][] ledColors = new LedColor[8][8];
+        return shifted;
+    }
 
-        int sizeX = 8;
-        int sizeY = 8;
+    private LedColor[][] createCharLeds(BitSet bits) {
 
-        for (int i = 0; i < sizeX; i++) {
-            for (int j = 0; j < sizeY; j++) {
-                ledColors[i][j] = bits.get(i * 8 + (8 - j)) ? green : off;
+        LedColor[][] ledColors = new LedColor[SIZE_X][SIZE_Y];
+
+        for (int i = 0; i < SIZE_X; i++) {
+            for (int j = 0; j < SIZE_Y; j++) {
+                ledColors[i][j] = bits.get(i * SIZE_Y + (SIZE_X - j - 1)) ? green : off;
             }
         }
         return ledColors;
     }
 
-    Flux<Button> createLayout(LedColor[][] ledColors) {
-        int sizeX = 8;
-        int sizeY = 8;
+    private LedColor[][] createCharLeds(BitSet bits1, BitSet bits2, int offset) {
+
+        LedColor[][] ledColors = new LedColor[SIZE_X][SIZE_Y];
+
+        for (int i = 0; i < SIZE_Y; i++) {
+            for (int j = 0; j < SIZE_X; j++) {
+                int locationX = j + offset;
+                boolean bitX = locationX < 8
+                        ? bits1.get(i * SIZE_Y + (SIZE_X - locationX - 1))
+                        : bits2.get(i * SIZE_Y + (SIZE_X - (locationX - SIZE_X) - 1));
+                ledColors[i][j] =  bitX ? green : off;
+            }
+        }
+        return ledColors;
+    }
+
+    private Flux<Button> createLayout(LedColor[][] ledColors) {
+        int sizeX = SIZE_X;
         List<Button> buttons = new ArrayList<>();
         for (int i = 0; i < sizeX; i++) {
-            for (int j = 0; j < sizeY; j++) {
+            for (int j = 0; j < SIZE_Y; j++) {
                 buttons.add(new Button((sizeX * i + j), ledColors[sizeX - 1 - i][j]));
             }
         }
         return Flux.fromIterable(buttons);
     }
     
-    LedColor[][] ledLayout() {
+    private LedColor[][] ledLayout() {
         return new LedColor[][] {
             { green, off, green, off, green, red, off, yellow },
             { yellow, off, green, off, green, red, off, yellow },
