@@ -57,7 +57,7 @@ public class MidiController {
     }
 
 
-    public static Optional<MidiDevice> openMidiDeviceReciever(String name) throws MidiUnavailableException {
+    public static Optional<MidiDevice> openMidiDeviceReceiver(String name) throws MidiUnavailableException {
         System.out.printf("List and open receiver midi device: %s%n", name);
         return openMidiDevice(name, d -> d.getMaxReceivers() != 0);
     }
@@ -91,7 +91,7 @@ public class MidiController {
             midiOutReceiver.send(msg1, 0);
 
             try {
-                Thread.sleep(note.getDuration());
+                Thread.sleep(note.getDurationMs());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

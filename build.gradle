@@ -6,6 +6,7 @@ repositories {
 }
 dependencies {
     implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.2.12.RELEASE'
+    testImplementation 'junit:junit:4.12'
 }
 
 apply plugin: 'java'

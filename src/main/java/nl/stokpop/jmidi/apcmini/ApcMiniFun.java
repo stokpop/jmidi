@@ -45,7 +45,7 @@ public class ApcMiniFun {
 
         try {
 
-            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever(name);
+            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReceiver(name);
 
             if (midiOutDevice.isPresent()) {
                 MidiDevice midiDevice = midiOutDevice.get();

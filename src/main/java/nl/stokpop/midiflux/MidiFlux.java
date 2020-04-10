@@ -35,7 +35,7 @@ public class MidiFlux {
 
         try {
 
-            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReciever(name);
+            Optional<MidiDevice> midiOutDevice = MidiController.openMidiDeviceReceiver(name);
 
             if (midiOutDevice.isPresent()) {
                 stokpopMidiFlux.startFlux(midiOutDevice.get());

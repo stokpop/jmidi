@@ -2,12 +2,12 @@ package nl.stokpop.midiflux;
 
 public class Note {
     private int note;
-    private int duration;
+    private int durationMs;
     private int velocity;
 
-    public Note(int note, int duration, int velocity) {
+    public Note(int note, int durationMs, int velocity) {
         this.note = note;
-        this.duration = duration;
+        this.durationMs = durationMs;
         this.velocity = velocity;
     }
 
@@ -15,12 +15,12 @@ public class Note {
         this(note, 200);
     }
 
-    public Note(int note, int duration) {
-        this(note, duration, 70);
+    public Note(int note, int durationMs) {
+        this(note, durationMs, 70);
     }
 
-    public int getDuration() {
-        return duration;
+    public int getDurationMs() {
+        return durationMs;
     }
 
     public int getNote() {
@@ -33,7 +33,7 @@ public class Note {
     public String toString() {
         return "Note{" +
                 "note=" + note +
-                ", duration=" + duration +
+                ", duration=" + durationMs +
                 ", velocity=" + velocity +
                 '}';
     }
